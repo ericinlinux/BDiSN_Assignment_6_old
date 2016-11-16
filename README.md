@@ -25,10 +25,10 @@ Tobacco use has the scores 1 (non), 2 (occasional) and 3 (regular, i.e. more tha
 
 # Notes to myself
 
-How to eliminate the nodes that does not have the values? dropnan on them?
+[Solved] How to eliminate the nodes that does not have the values? dropnan on them?
 
-Networkx or numpy operations only?
+[Solved] Networkx or numpy operations only?
 
-Dont be stupid! They used alcohol!
+[Solved] Dont be stupid! They used alcohol!
 
-Convert weights of the edges to float!!!
+[Solved] Convert weights of the edges to float!!!
