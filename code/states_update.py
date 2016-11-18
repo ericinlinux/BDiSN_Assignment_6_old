@@ -10,12 +10,13 @@ import numpy as np
 The attribute state in every node defines the last state of the node. At the dictionary activityTimeLine we have the
 evolution of the values for the state over time.
 '''
-def states_update(g, t, model='logistic'):
+def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 1, scaling_factor=None, normalizing_factor=None,
+                  steepness=None, threshold=None):
+    combination_functions_list = ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
     if t % 10 == 0:
         print t
+
     g_new = g.copy()
-    delta = 1
-    speed_factor = 0.3
 
     # Updating the state of each node in the graph
     for node in g.nodes():
@@ -32,72 +33,83 @@ def states_update(g, t, model='logistic'):
                 print t, neigh
                 exit(0)
 
-        aggimpact = aggimpact/sum_weights
+        # Defining aggimpact ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
+        if combination_function == 'id' or combination_function == 'sum':
+            aggimpact = aggimpact
+        elif combination_function == 'ssum':
+            # Use scaling_factor
+            if scaling_factor == None:
+                print 'Error! Give scaling factor as an input to this function!'
+            else:
+                try:
+                    scaling_f = scaling_factor[node]
+                    aggimpact = aggimpact/scaling_f
+                except:
+                    print 'Scaling factor has to be a dictionary!'
+                    print scaling_factor
+                    exit(0)
+
+        elif combination_function == 'norsum':
+            # Use normalization_factor
+            if normalizing_factor == None:
+                print 'Error! Give normalization factor as an input to this function!'
+            else:
+                try:
+                    normalizing_f = normalizing_factor[node]
+                    aggimpact = aggimpact / normalizing_f
+                except:
+                    print 'Normalization factor has to be a dictionary!'
+                    print normalizing_factor
+                    exit(0)
+
+        elif combination_function == 'adnorsum':
+            aggimpact = aggimpact / sum_weights
+
+        elif combination_function == 'slogistic':
+            if steepness == None or threshold == None:
+                print 'Steepness and threshold should be passed to the function for slogistic!'
+                exit(0)
+            try:
+                steep = steepness[node]
+                thres = threshold[node]
+            except:
+                print 'Dictionary is not built with the right keys!'
+                exit(0)
+            aggimpact = 1 / (1 + np.exp(-steep * (aggimpact - thres)))
+
+        elif combination_function == 'alogistic':
+            if steepness == None or threshold == None:
+                print 'Steepness and threshold should be passed to the function for alogistic!'
+                exit(0)
+            try:
+                steep = steepness[node]
+                thres = threshold[node]
+            except:
+                print 'Dictionary is not built with the right keys (alogistic)!'
+                exit(0)
+            aggimpact = ((1 / (1 + np.exp(-steep * (aggimpact - thres)))) - (1 / (1 + np.exp(steep * thres)))) * (1 + np.exp(-steep * thres))
+
+        elif combination_function == 'adalogistic':
+            if steepness == None or threshold == None:
+                print 'Steepness and threshold should be passed to the function for adalogistic!'
+                exit(0)
+            try:
+                steep = steepness[node]
+                thres = threshold[node]
+            except:
+                print 'Dictionary is not built with the right keys (adalogistic)!'
+                exit(0)
+            aggimpact = ((1 / (1 + np.exp(-steep * (aggimpact - thres * sum_weights)))) - (1 / (1 + np.exp(steep * thres)))) * (1 + np.exp(-steep * thres))
+        else:
+            print 'Your combination function is not in the possible list of functions:', combination_functions_list
 
         if aggimpact > 0:
             # new_state = store_states(i, step-1) + update_s * (aggimpact - store_states(i, step-1)); %calculate the new state value
             old_activity = g.node[node]['state']
-            num_neighbours = len(g.neighbors(node))
-            # Definition of the speed factor
-            if model == 'original':
-                new_activity = old_activity + speed_factor * (aggimpact - old_activity) * delta
-            elif model == 'weighted':
-                if num_neighbours == 0:
-                    new_activity = old_activity
-                else:
-                    new_activity = old_activity + (speed_factor / num_neighbours) * (aggimpact - old_activity) * delta
-            elif model == 'logistic':
-                new_activity = old_activity + logistic(speed_factor) * (aggimpact - old_activity) * delta
-            else:
-                print 'Wrong value for model!'
-                raw_input()
+            new_activity = old_activity + speed_factor * (aggimpact - old_activity) * delta
             g_new.node[node]['activityTimeLine'].update({t: new_activity})
             g_new.node[node]['state'] = new_activity
+        else:
+            actual_state = g.node[node]['state']
+            g_new.node[node]['activityTimeLine'].update({t: actual_state})
     return g_new
-
-
-"""
-The logistic function can be tuned by changing the steepness and threshold values. It receives a number and returns a
-value between 0 and 1.
-"""
-def logistic(number):
-    steepness = 0.3
-    threshold = 10
-    log_number = (1 / (1 + np.exp(-steepness * (number - threshold))) - 1 / (1 + np.exp(steepness * threshold))) * \
-                (1 + np.exp(-steepness * threshold))
-    return log_number
-
-
-
-
-
-'''
-function [ states_new ] = calculate_states(  new_relations, store_states, number_agents, step  )
-
-states_new = zeros(number_agents, 1); %create a new matrix with the state values
-update_s = 0.2; % = eta
-s = 1; % counter
-impact_new = 0;
-
-weight_calculation = new_relations; %temporary used relations
-weight_calculation( weight_calculation == 0.1) = 0; %change 0.1 to 0 so the relation value will not be included in the sum
-
-for i = 1:number_agents %for each state
-    w(i) = sum(weight_calculation(:,i));
-    count_relations = new_relations(:,i).';
-    for weight_value = 1:numel(count_relations)
-        impact = new_relations(weight_value, i) * store_states(s,step-1); %calculate the impact
-        impact_new = impact_new + impact; %sum the impact
-        s = s+1;
-    end
-    s = 1;
-    if impact_new > 0 %if impact is greater than 0
-        aggimpact = impact_new / w(i); %calculate the aggregated impact
-        new_state = store_states(i, step-1) + update_s * (aggimpact - store_states(i, step-1)); %calculate the new state value
-        states_new(i,1) = new_state;
-    end
-    impact_new = 0; %set the impact back to 0
-end
-
-end %function
-'''
