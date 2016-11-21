@@ -13,9 +13,10 @@ evolution of the values for the state over time.
 def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 1, scaling_factor=None, normalizing_factor=None,
                   steepness=None, threshold=None):
     combination_functions_list = ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
-    if t % 10 == 0:
-        print t
 
+    #if t % 10 == 0:
+    #    print t, combination_function, speed_factor
+    chosen = 'XX'
     g_new = g.copy()
 
     # Updating the state of each node in the graph
@@ -25,7 +26,8 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
         # Calculate the agregated impact from the neighbours, together with the sum of the weights.
         for neigh in g.neighbors(node):
             #connect = g.get_edge_data(neigh, node)['weight']
-            connect = g.get_edge_data(neigh, node).values()[0]['weight']
+            connect = g[neigh][node][0]['weightTimeLine'][t-1]
+            #connect = g.get_edge_data(neigh, node).values()[0]['weight']
             sum_weights = sum_weights + connect
             try:
                 aggimpact = aggimpact + g.node[neigh]['activityTimeLine'][t-1]*connect
@@ -33,6 +35,8 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
                 print t, neigh
                 exit(0)
 
+        if node == chosen:
+            print t, aggimpact, sum_weights
         # Defining aggimpact ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
         if combination_function == 'id' or combination_function == 'sum':
             aggimpact = aggimpact
@@ -102,11 +106,16 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
             aggimpact = ((1 / (1 + np.exp(-steep * (aggimpact - thres * sum_weights)))) - (1 / (1 + np.exp(steep * thres)))) * (1 + np.exp(-steep * thres))
         else:
             print 'Your combination function is not in the possible list of functions:', combination_functions_list
+            exit(0)
 
+        if node == chosen:
+            print 'aggimpact: ', aggimpact
         if aggimpact > 0:
             # new_state = store_states(i, step-1) + update_s * (aggimpact - store_states(i, step-1)); %calculate the new state value
             old_activity = g.node[node]['state']
             new_activity = old_activity + speed_factor * (aggimpact - old_activity) * delta
+            if node == chosen:
+                print 'old: ', old_activity, ' \tnew: ', new_activity
             g_new.node[node]['activityTimeLine'].update({t: new_activity})
             g_new.node[node]['state'] = new_activity
         else:
