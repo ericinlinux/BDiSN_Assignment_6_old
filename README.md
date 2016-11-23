@@ -21,14 +21,9 @@ For this work, we will make the following changes:
 
 ## The information about smoking habits
 
-Tobacco use has the scores 1 (non), 2 (occasional) and 3 (regular, i.e. more than once per week).
+Tobacco use has the scores 1 (non), 2 (occasional) and 3 (regular, i.e. more than once per week). So for this pattern
+the values are initialized with values 0.1, 0.5 and 0.9 respectively.
 
-# Notes to myself
+The idea of this code is to simulate the opinion change over time according to the initial values and the network
+provided by the data set.
 
-[Solved] How to eliminate the nodes that does not have the values? dropnan on them?
-
-[Solved] Networkx or numpy operations only?
-
-[Solved] Dont be stupid! They used alcohol!
-
-[Solved] Convert weights of the edges to float!!!

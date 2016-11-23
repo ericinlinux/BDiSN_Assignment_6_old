@@ -14,9 +14,6 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
                   steepness=None, threshold=None):
     combination_functions_list = ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
 
-    #if t % 10 == 0:
-    #    print t, combination_function, speed_factor
-    chosen = 'XX'
     g_new = g.copy()
 
     # Updating the state of each node in the graph
@@ -35,8 +32,6 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
                 print t, neigh
                 exit(0)
 
-        if node == chosen:
-            print t, aggimpact, sum_weights
         # Defining aggimpact ['id', 'sum', 'ssum', 'norsum', 'adnorsum', 'slogistic', 'alogistic', 'adalogistic']
         if combination_function == 'id' or combination_function == 'sum':
             aggimpact = aggimpact
@@ -108,17 +103,21 @@ def states_update(g, t, combination_function='sum', speed_factor = 0.3, delta = 
             print 'Your combination function is not in the possible list of functions:', combination_functions_list
             exit(0)
 
-        if node == chosen:
-            print 'aggimpact: ', aggimpact
         if aggimpact > 0:
             # new_state = store_states(i, step-1) + update_s * (aggimpact - store_states(i, step-1)); %calculate the new state value
             old_activity = g.node[node]['state']
             new_activity = old_activity + speed_factor * (aggimpact - old_activity) * delta
-            if node == chosen:
-                print 'old: ', old_activity, ' \tnew: ', new_activity
+            try:
+                new_activity = np.asscalar(new_activity)
+            except:
+                new_activity=new_activity
+
             g_new.node[node]['activityTimeLine'].update({t: new_activity})
             g_new.node[node]['state'] = new_activity
         else:
-            actual_state = g.node[node]['state']
+            try:
+                actual_state = np.asscalar(g.node[node]['state'])
+            except:
+                actual_state = g.node[node]['state']
             g_new.node[node]['activityTimeLine'].update({t: actual_state})
     return g_new
