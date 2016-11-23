@@ -27,3 +27,6 @@ the values are initialized with values 0.1, 0.5 and 0.9 respectively.
 The idea of this code is to simulate the opinion change over time according to the initial values and the network
 provided by the data set.
 
+## The assignment
+
+The document for the assignment is [here](Assignment06v2.pdf).
